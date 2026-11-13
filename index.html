@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BrotIA · Huerta en casa en Formosa y Chaco</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bitter:wght@500;700;800&family=Nunito+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  :root{
+    --hoja:#1F4D2B; --brote:#6FA83A; --tierra:#5B3A29; --sol:#E8B93A;
+    --fondo:#F2F7EE; --papel:#FFFFFF; --texto:#1E2A20; --suave:#5C6B5F; --linea:#D3E0CC;
+    --error:#A83232;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --fondo:#14201A; --papel:#1C2B22; --texto:#E8F1E6; --suave:#A9BCAD; --linea:#2D4336; --hoja:#9BD36A; --brote:#6FA83A; --tierra:#D9B08C; }
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--fondo);color:var(--texto);font-family:"Nunito Sans",system-ui,sans-serif;line-height:1.6;font-size:17px}
+  h1,h2,h3{font-family:Bitter,Georgia,serif;line-height:1.2;color:var(--hoja);margin:0 0 .6em}
+  a{color:var(--hoja)}
+  :focus-visible{outline:3px solid var(--sol);outline-offset:2px}
+  .wrap{max-width:900px;margin:0 auto;padding:0 20px}
+  header.hero{background:var(--hoja);color:#F2F7EE;padding:56px 0 44px;position:relative;overflow:hidden}
+  header.hero h1{color:#fff;font-size:clamp(2.6rem,8vw,4.4rem);font-weight:800;margin:0}
+  header.hero p{max-width:36em;font-size:1.15rem;margin:.6em 0 0}
+  header.hero svg{position:absolute;right:-30px;bottom:-30px;width:260px;opacity:.18}
+  nav{position:sticky;top:0;z-index:5;background:var(--papel);border-bottom:1px solid var(--linea)}
+  nav .wrap{display:flex;gap:4px;overflow-x:auto}
+  nav a{padding:14px 14px;text-decoration:none;font-weight:700;white-space:nowrap;color:var(--texto)}
+  nav a:hover{color:var(--hoja);background:var(--fondo)}
+  section{padding:48px 0 8px}
+  .aviso{background:var(--papel);border-left:5px solid var(--sol);padding:14px 18px;border-radius:4px;color:var(--texto)}
+  .tabla-caja{overflow-x:auto;background:var(--papel);border:1px solid var(--linea);border-radius:8px}
+  table{border-collapse:collapse;width:100%;min-width:640px}
+  th,td{padding:10px 14px;text-align:left;border-bottom:1px solid var(--linea)}
+  th{background:var(--hoja);color:#fff;font-weight:700}
+  @media (prefers-color-scheme: dark){ th{color:#14201A} }
+  input[type=text],input[type=search]{width:100%;padding:12px 14px;font:inherit;border:2px solid var(--linea);border-radius:6px;background:var(--papel);color:var(--texto)}
+  input:focus{border-color:var(--brote)}
+  label{display:block;font-weight:700;margin:14px 0 6px}
+  button{font:inherit;font-weight:700;padding:12px 22px;border-radius:6px;border:2px solid var(--hoja);cursor:pointer;background:var(--hoja);color:#fff}
+  @media (prefers-color-scheme: dark){ button{color:#14201A} }
+  button.sec{background:transparent;color:var(--hoja)}
+  button:hover{filter:brightness(1.1)}
+  details{background:var(--papel);border:1px solid var(--linea);border-radius:8px;margin-bottom:12px}
+  summary{cursor:pointer;padding:16px 18px;font-family:Bitter,serif;font-weight:700;font-size:1.15rem;color:var(--hoja)}
+  details .cuerpo{padding:0 18px 16px}
+  details ul{padding-left:1.2em}
+  .pregunta{background:var(--papel);border:1px solid var(--linea);border-radius:8px;padding:16px 18px;margin-bottom:14px}
+  .pregunta p{margin:0 0 8px;font-weight:700}
+  .pregunta label{font-weight:400;margin:6px 0;display:flex;gap:10px;align-items:flex-start;cursor:pointer}
+  .pregunta input{margin-top:6px}
+  .ok{color:var(--hoja);font-weight:700}
+  .mal{color:var(--error);font-weight:700}
+  .resultado{margin-top:18px;padding:16px 18px;border-radius:8px;background:var(--papel);border:2px solid var(--brote)}
+  .oculto{display:none}
+  dialog{border:none;border-radius:10px;padding:26px;max-width:520px;width:calc(100% - 32px);background:var(--papel);color:var(--texto)}
+  dialog::backdrop{background:rgba(0,0,0,.55)}
+  .botones{display:flex;gap:12px;flex-wrap:wrap;margin-top:18px}
+  footer{margin-top:56px;padding:28px 0;border-top:1px solid var(--linea);color:var(--suave);font-size:.95rem}
+  .err{color:var(--error);font-weight:700;min-height:1.4em}
+  @media (prefers-reduced-motion: reduce){ html{scroll-behavior:auto} }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <svg viewBox="0 0 200 200" aria-hidden="true"><path d="M100 190 C100 120 100 90 100 40" stroke="#fff" stroke-width="6" fill="none"/><path d="M100 120 C60 120 30 95 28 60 C65 62 98 85 100 120Z" fill="#fff"/><path d="M100 90 C140 90 170 65 172 30 C135 32 102 55 100 90Z" fill="#fff"/></svg>
+  <div class="wrap">
+    <h1>BrotIA</h1>
+    <p>Tu asistente de huerta en casa para Formosa y Chaco: calendario de siembra, curso corto y certificado.</p>
+  </div>
+</header>
+
+<nav aria-label="Secciones">
+  <div class="wrap">
+    <a href="#calendario">Calendario</a>
+    <a href="#curso">Curso</a>
+    <a href="#evaluacion">Autoevaluación</a>
+    <a href="#certificado">Certificado</a>
+    <a href="#limites">Qué no hace</a>
+  </div>
+</nav>
+
+<main class="wrap">
+
+<section id="calendario">
+  <h2>Calendario de siembra</h2>
+  <p class="aviso">Los datos vienen del calendario de ProHuerta, que es nacional y todavía no está validado para el NEA. Ajustá las fechas al clima de tu zona y a la temporada.</p>
+  <label for="buscar">Buscar cultivo</label>
+  <input type="search" id="buscar" placeholder="Por ejemplo: lechuga">
+  <div class="tabla-caja" style="margin-top:16px">
+    <table>
+      <thead><tr><th>Cultivo</th><th>Forma de siembra</th><th>Época</th><th>Entre plantas</th><th>Entre líneas</th><th>Días a cosecha</th></tr></thead>
+      <tbody id="filas"></tbody>
+    </table>
+  </div>
+  <p id="vacio" class="oculto" style="color:var(--suave)"></p>
+</section>
+
+<section id="curso">
+  <h2>Curso: huerta en casa</h2>
+  <p>Cuatro clases cortas. Leelas en orden y después hacé la autoevaluación.</p>
+
+  <details open>
+    <summary>Clase 1 · Qué sembrar y cómo empezar</summary>
+    <div class="cuerpo">
+      <ul>
+        <li>Empezá chico: un cantero o unos cajones que puedas cuidar todos los días.</li>
+        <li>Buscá un lugar con unas 6 horas de sol, cerca de una canilla.</li>
+        <li>Aflojá la tierra y mezclala con compost o abono bien maduro.</li>
+        <li>Elegí cultivos que estén en época según el calendario y que vayas a comer. Mejor pocos y bien cuidados que muchos abandonados.</li>
+      </ul>
+    </div>
+  </details>
+
+  <details>
+    <summary>Clase 2 · Siembra y distancias</summary>
+    <div class="cuerpo">
+      <ul>
+        <li>Siembra directa: la semilla va al lugar definitivo. Almácigo: nacen en un semillero y se trasplantan.</li>
+        <li>Una regla práctica: enterrá la semilla a una profundidad de 2 a 3 veces su tamaño.</li>
+        <li>Respetá la distancia entre plantas y entre líneas que indica el calendario: si hay mucha densidad, las plantas compiten por luz, agua y alimento.</li>
+        <li>Si nacieron muy juntas, hacé el raleo: sacá las sobrantes para que queden a la distancia correcta.</li>
+      </ul>
+    </div>
+  </details>
+
+  <details>
+    <summary>Clase 3 · Riego, cuidados y cosechas</summary>
+    <div class="cuerpo">
+      <ul>
+        <li>Regá temprano a la mañana o al atardecer. La tierra tiene que quedar húmeda, no encharcada.</li>
+        <li>Cubrí el suelo con paja o pasto seco (mulching) para guardar humedad y frenar yuyos.</li>
+        <li>Recorré la huerta seguido: mirar las hojas te permite detectar plagas o falta de agua a tiempo.</li>
+        <li>Cosechá cuando el cultivo llegó a su punto, mejor en las horas frescas. Los días a cosecha del calendario son una guía, no una fecha exacta.</li>
+      </ul>
+    </div>
+  </details>
+
+  <details>
+    <summary>Clase 4 · Semillas, rotación, asociación y saberes tradicionales</summary>
+    <div class="cuerpo">
+      <ul>
+        <li>Semillas propias: elegí plantas sanas, dejá madurar bien el fruto o la semilla, secala y guardala en un lugar fresco, seco y rotulado.</li>
+        <li>Rotación: no repitas la misma familia de cultivos en el mismo lugar temporada tras temporada. Ayuda a cuidar el suelo y a reducir plagas.</li>
+        <li>Asociación: algunos cultivos se acompañan bien en el mismo cantero, por ejemplo mezclando hortalizas de hoja con aromáticas.</li>
+        <li>Luna y viento: son saberes tradicionales de la comunidad. Podés observarlos y anotar qué te resulta, pero no son reglas garantizadas.</li>
+      </ul>
+    </div>
+  </details>
+</section>
+
+<section id="evaluacion">
+  <h2>Autoevaluación</h2>
+  <p>8 preguntas. Se aprueba con 70% (6 respuestas correctas) y podés reintentar las veces que quieras.</p>
+  <div id="quiz"></div>
+  <div class="botones"><button id="corregir">Corregir</button></div>
+  <div id="resultado" class="resultado oculto" aria-live="polite"></div>
+</section>
+
+<section id="certificado">
+  <h2>Certificado</h2>
+  <p id="cert-bloqueado">Aprobá la autoevaluación para pedir tu certificado en PDF.</p>
+  <div id="cert-pedir" class="oculto">
+    <p>Aprobaste. Si querés tu certificado, vamos a pedirte tu nombre completo y tu DNI.</p>
+    <button id="btn-cert">Pedir certificado</button>
+  </div>
+  <p id="cert-sin" class="oculto aviso">Elegiste no dar tus datos. Hiciste el curso igual, pero no se emite certificado.</p>
+</section>
+
+<section id="limites">
+  <h2>Qué no hace</h2>
+  <ul>
+    <li>No reemplaza a un técnico: el calendario no está validado para Chaco y Formosa.</li>
+    <li>No incluye información sobre el ciclo del viento en la región.</li>
+    <li>La tabla de otoño-invierno y los métodos de cosecha están incompletos.</li>
+    <li>La autoevaluación es auto-aplicada.</li>
+    <li>Esta versión no tiene chat con IA ni código de verificación.</li>
+  </ul>
+</section>
+
+</main>
+
+<footer><div class="wrap">BrotIA · Huerta en casa para Formosa y Chaco</div></footer>
+
+<dialog id="privacidad" aria-labelledby="priv-titulo">
+  <h3 id="priv-titulo">Antes de pedirte tus datos</h3>
+  <p>Para emitir el certificado necesitamos tu nombre completo y tu DNI. Se usan solo para escribirlos en el PDF, en tu dispositivo: esta página no los envía ni los guarda en ningún servidor.</p>
+  <p>Vos decidís si los das. Si preferís no hacerlo, el curso queda hecho pero no recibís certificado.</p>
+  <div class="botones">
+    <button id="acepto">Acepto dar mis datos</button>
+    <button id="rechazo" class="sec">No, sin certificado</button>
+  </div>
+</dialog>
+
+<dialog id="datos" aria-labelledby="datos-titulo">
+  <h3 id="datos-titulo">Datos para el certificado</h3>
+  <label for="nombre">Nombre completo</label>
+  <input type="text" id="nombre" autocomplete="name">
+  <label for="dni">DNI (solo números)</label>
+  <input type="text" id="dni" inputmode="numeric" autocomplete="off">
+  <p id="datos-err" class="err" role="alert"></p>
+  <div class="botones">
+    <button id="generar">Descargar PDF</button>
+    <button id="cancelar" class="sec">Cancelar</button>
+  </div>
+</dialog>
+
+<script>
+/* ============ CONFIGURACIÓN: completá estos datos ============ */
+const ENTIDAD = "BrotIA";
+const CURSO = "Huerta en casa en Formosa y Chaco";
+// Las tres firmas, en el orden en que deben aparecer en el certificado.
+const FIRMANTES = [
+  { nombre: "Nombre del firmante 1", cargo: "Cargo" },
+  { nombre: "Nombre del firmante 2", cargo: "Cargo" },
+  { nombre: "Nombre del firmante 3", cargo: "Cargo" }
+];
+const APROBACION = 70; // porcentaje mínimo
+
+// Calendario de siembra (datos de ProHuerta). Una fila por cultivo.
+// No cargues las filas marcadas como dudosas.
+// Formato: { cultivo:"", forma:"", epoca:"", entrePlantas:"", entreLineas:"", dias:"" }
+const CALENDARIO = [
+  // { cultivo:"Ejemplo", forma:"Almácigo", epoca:"Mar-May", entrePlantas:"25 cm", entreLineas:"30 cm", dias:"60-90" },
+];
+/* ============================================================== */
+
+/* ---- Calendario ---- */
+const filas = document.getElementById("filas");
+const vacio = document.getElementById("vacio");
+function esc(s){ return String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+function pintar(filtro){
+  const f = (filtro||"").trim().toLowerCase();
+  const lista = CALENDARIO.filter(r => r.cultivo.toLowerCase().includes(f));
+  filas.innerHTML = lista.map(r =>
+    `<tr><td><strong>${esc(r.cultivo)}</strong></td><td>${esc(r.forma)}</td><td>${esc(r.epoca)}</td><td>${esc(r.entrePlantas)}</td><td>${esc(r.entreLineas)}</td><td>${esc(r.dias)}</td></tr>`).join("");
+  if(!CALENDARIO.length){
+    vacio.textContent = "El calendario todavía no tiene cultivos cargados.";
+    vacio.classList.remove("oculto");
+  } else if(!lista.length){
+    vacio.textContent = "No encontramos ese cultivo. Probá con otro nombre.";
+    vacio.classList.remove("oculto");
+  } else vacio.classList.add("oculto");
+}
+document.getElementById("buscar").addEventListener("input", e => pintar(e.target.value));
+pintar("");
+
+/* ---- Autoevaluación ---- */
+const PREGUNTAS = [
+  { q:"¿Qué conviene mirar primero para elegir qué sembrar?", o:["Lo que está de moda","La época del calendario, ajustada al clima de tu zona","Solo el precio de las semillas"], c:1 },
+  { q:"Si recién empezás con la huerta, lo mejor es:", o:["Una superficie grande para sembrar de todo","Una superficie chica que puedas cuidar todos los días","Esperar a tener un terreno enorme"], c:1 },
+  { q:"¿Cuánto sol necesitan, en general, las hortalizas?", o:["Unas 6 horas","Una hora","No necesitan sol"], c:0 },
+  { q:"¿Qué es el raleo?", o:["Regar más de lo normal","Sacar plantitas sobrantes para respetar la distancia entre plantas","Cosechar antes de tiempo"], c:1 },
+  { q:"¿Cuándo conviene regar?", o:["Al mediodía, con el sol más fuerte","Temprano a la mañana o al atardecer","Solo cuando llueve"], c:1 },
+  { q:"La rotación de cultivos consiste en:", o:["Cambiar la huerta de casa","No repetir la misma familia de cultivos en el mismo lugar temporada tras temporada","Sembrar siempre lo mismo"], c:1 },
+  { q:"La luna y el viento para sembrar son:", o:["Reglas garantizadas","Saberes tradicionales que se pueden observar, pero no son garantía","Datos científicos validados para el NEA"], c:1 },
+  { q:"Para guardar semillas propias:", o:["Elegí plantas sanas, secalas bien y guardalas en un lugar fresco y seco","Guardalas húmedas en una bolsa cerrada","Usá las de cualquier planta, aunque esté enferma"], c:0 }
+];
+const quiz = document.getElementById("quiz");
+quiz.innerHTML = PREGUNTAS.map((p,i) =>
+  `<fieldset class="pregunta" style="border:1px solid var(--linea)"><legend class="sr" style="position:absolute;left:-9999px">Pregunta ${i+1}</legend>
+   <p>${i+1}. ${esc(p.q)}</p>` +
+  p.o.map((t,j) => `<label><input type="radio" name="p${i}" value="${j}"> <span>${esc(t)}</span></label>`).join("") +
+  `<div class="fb" id="fb${i}"></div></fieldset>`).join("");
+
+let puntaje = null;
+document.getElementById("corregir").addEventListener("click", () => {
+  let bien = 0, sinResponder = 0;
+  PREGUNTAS.forEach((p,i) => {
+    const sel = document.querySelector(`input[name="p${i}"]:checked`);
+    const fb = document.getElementById("fb"+i);
+    if(!sel){ sinResponder++; fb.innerHTML = '<span class="mal">Sin responder.</span>'; return; }
+    if(Number(sel.value) === p.c){ bien++; fb.innerHTML = '<span class="ok">Correcta.</span>'; }
+    else fb.innerHTML = `<span class="mal">Incorrecta.</span> Respuesta correcta: ${esc(p.o[p.c])}`;
+  });
+  const pct = Math.round(bien / PREGUNTAS.length * 100);
+  const r = document.getElementById("resultado");
+  r.classList.remove("oculto");
+  if(pct >= APROBACION){
+    puntaje = pct;
+    r.innerHTML = `<strong class="ok">Aprobaste con ${pct}%.</strong> (${bien} de ${PREGUNTAS.length} correctas). Seguí en la sección Certificado.`;
+    document.getElementById("cert-bloqueado").classList.add("oculto");
+    document.getElementById("cert-sin").classList.add("oculto");
+    document.getElementById("cert-pedir").classList.remove("oculto");
+  } else {
+    puntaje = null;
+    r.innerHTML = `<strong class="mal">Sacaste ${pct}%.</strong> (${bien} de ${PREGUNTAS.length} correctas). Se aprueba con ${APROBACION}%. Repasá las clases y volvé a intentar.`;
+    document.getElementById("cert-pedir").classList.add("oculto");
+    document.getElementById("cert-bloqueado").classList.remove("oculto");
+  }
+  r.scrollIntoView({behavior:"smooth", block:"nearest"});
+});
+
+/* ---- Privacidad y datos ---- */
+const dlgPriv = document.getElementById("privacidad");
+const dlgDatos = document.getElementById("datos");
+document.getElementById("btn-cert").addEventListener("click", () => dlgPriv.showModal());
+document.getElementById("rechazo").addEventListener("click", () => {
+  dlgPriv.close();
+  document.getElementById("cert-pedir").classList.add("oculto");
+  document.getElementById("cert-sin").classList.remove("oculto");
+});
+document.getElementById("acepto").addEventListener("click", () => { dlgPriv.close(); dlgDatos.showModal(); });
+document.getElementById("cancelar").addEventListener("click", () => dlgDatos.close());
+
+document.getElementById("generar").addEventListener("click", () => {
+  const nombre = document.getElementById("nombre").value.trim().replace(/\s+/g," ");
+  const dni = document.getElementById("dni").value.replace(/[.\s]/g,"");
+  const err = document.getElementById("datos-err");
+  if(nombre.split(" ").length < 2 || nombre.length < 5){ err.textContent = "Escribí tu nombre y apellido completos."; return; }
+  if(!/^\d{7,8}$/.test(dni)){ err.textContent = "El DNI tiene 7 u 8 números, sin puntos."; return; }
+  if(!window.jspdf){ err.textContent = "No se pudo cargar el generador de PDF. Revisá tu conexión y recargá la página."; return; }
+  err.textContent = "";
+  hacerPDF(nombre, dni, puntaje);
+  dlgDatos.close();
+});
+
+/* ---- Certificado PDF ---- */
+function hoja(doc, x, y, rx, ry, color){
+  doc.setFillColor(...color); doc.ellipse(x, y, rx, ry, "F");
+}
+function hacerPDF(nombre, dni, pct){
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation:"landscape", unit:"mm", format:"a4" });
+  const W = 297, H = 210, cx = W/2;
+  const verdeOsc = [31,77,43], verde = [111,168,58], claro = [232,243,226];
+
+  // Fondo verde claro y marco
+  doc.setFillColor(...claro); doc.rect(0,0,W,H,"F");
+  doc.setDrawColor(...verdeOsc); doc.setLineWidth(1.6); doc.rect(8,8,W-16,H-16);
+  doc.setLineWidth(0.4); doc.rect(12,12,W-24,H-24);
+
+  // Hojas en las esquinas
+  const tonos = [[111,168,58],[79,138,64],[160,200,110]];
+  [[22,24,1],[W-22,24,-1],[22,H-24,1],[W-22,H-24,-1]].forEach(([x,y,d],k) => {
+    hoja(doc, x+d*8, y-(k<2?-6:6), 14, 5, tonos[0]);
+    hoja(doc, x+d*14, y+(k<2?10:-10), 12, 4.5, tonos[1]);
+    hoja(doc, x+d*3, y+(k<2?14:-14), 10, 4, tonos[2]);
+  });
+
+  // Logo
+  doc.setFillColor(...verdeOsc); doc.circle(cx, 34, 11, "F");
+  doc.setFillColor(255,255,255); doc.ellipse(cx-3, 33, 5, 2.4, "F"); doc.ellipse(cx+3.5, 30.5, 4.5, 2.2, "F");
+  doc.setDrawColor(255,255,255); doc.setLineWidth(0.8); doc.line(cx, 40, cx, 31);
+  doc.setTextColor(...verdeOsc); doc.setFont("helvetica","bold"); doc.setFontSize(16);
+  doc.text(ENTIDAD, cx, 54, {align:"center"});
+
+  // Título y cuerpo
+  doc.setFont("times","bold"); doc.setFontSize(30);
+  doc.text("Certificado de capacitación", cx, 72, {align:"center"});
+  doc.setFont("helvetica","normal"); doc.setFontSize(13); doc.setTextColor(40,50,42);
+  doc.text(ENTIDAD + " certifica que", cx, 86, {align:"center"});
+
+  doc.setFont("times","bold"); doc.setFontSize(28); doc.setTextColor(...verdeOsc);
+  doc.text(nombre, cx, 102, {align:"center", maxWidth: W-60});
+  doc.setFont("helvetica","normal"); doc.setFontSize(13); doc.setTextColor(40,50,42);
+  doc.text("DNI " + Number(dni).toLocaleString("es-AR"), cx, 112, {align:"center"});
+
+  doc.text("aprobó el curso", cx, 124, {align:"center"});
+  doc.setFont("helvetica","bold"); doc.setFontSize(17); doc.setTextColor(...verdeOsc);
+  doc.text('"' + CURSO + '"', cx, 134, {align:"center", maxWidth: W-60});
+  doc.setFont("helvetica","normal"); doc.setFontSize(13); doc.setTextColor(40,50,42);
+  doc.text("con un puntaje de " + pct + "%", cx, 144, {align:"center"});
+  const fecha = new Date().toLocaleDateString("es-AR", {day:"numeric", month:"long", year:"numeric"});
+  doc.text("Fecha: " + fecha, cx, 154, {align:"center"});
+
+  // Tres firmas, en el orden configurado
+  const xs = [58, cx, W-58];
+  FIRMANTES.forEach((f,i) => {
+    doc.setDrawColor(...verdeOsc); doc.setLineWidth(0.4); doc.line(xs[i]-32, 180, xs[i]+32, 180);
+    doc.setFont("helvetica","bold"); doc.setFontSize(10); doc.setTextColor(40,50,42);
+    doc.text(f.nombre, xs[i], 185, {align:"center", maxWidth:60});
+    doc.setFont("helvetica","normal"); doc.setFontSize(9);
+    doc.text(f.cargo, xs[i], 190, {align:"center", maxWidth:60});
+  });
+
+  const archivo = "certificado-brotia-" + nombre.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"") + ".pdf";
+  doc.save(archivo);
+}
+</script>
+</body>
+</html>
